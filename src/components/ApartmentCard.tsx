@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Users, Maximize, MapPin, Bath, Coffee, Wifi } from "lucide-react";
@@ -23,12 +22,12 @@ export default function ApartmentCard({ apartment }: { apartment: ApartmentProps
   const [isHovered, setIsHovered] = useState(false);
   
   // Use translated name and description if available
-  const translatedName = language !== 'en' && t.apartmentDescriptions[apartment.id]?.name 
-    ? t.apartmentDescriptions[apartment.id].name 
+  const translatedName = language !== 'en' && t.apartmentDescriptions?.[apartment.id]?.name 
+    ? t.apartmentDescriptions![apartment.id]!.name 
     : apartment.name;
     
-  const translatedDescription = language !== 'en' && t.apartmentDescriptions[apartment.id]?.description 
-    ? t.apartmentDescriptions[apartment.id].description 
+  const translatedDescription = language !== 'en' && t.apartmentDescriptions?.[apartment.id]?.description 
+    ? t.apartmentDescriptions![apartment.id]!.description 
     : apartment.description;
   
   return (

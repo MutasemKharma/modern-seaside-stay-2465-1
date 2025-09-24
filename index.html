@@ -12,10 +12,8 @@
   <body>
     <div id="root"></div>
     <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
-    <!-- Temporarily disable helper script to avoid conflicts causing a white page -->
-    <script src="https://cdn.gpteng.co/gptengineer.js" type="text/disabled" data-disabled="true"></script>
+    <script src="https://cdn.gpteng.co/gptengineer.js"></script>
     <script type="module" src="/src/main.tsx"></script>
-    <!-- Temporarily disable route messenger script to avoid conflicts when not in iframe -->
     <script
         src="https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/scripts//route-messenger-vite.js"
        data-target-origin="*"
@@ -24,8 +22,6 @@
         data-only-in-iframe="true"
         data-debug="true"
         data-custom-data='{"appName": "YourApp", "version": "1.0.0", "greeting": "hi"}'
-        type="text/disabled"
-        data-disabled="true"
         defer
     ></script>
   </body>

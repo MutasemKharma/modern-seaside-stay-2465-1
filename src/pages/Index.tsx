@@ -59,33 +59,33 @@ export default function Index() {
   const features = [
     {
       icon: <Waves className="h-8 w-8 text-primary" />,
-      title: t.home.amenities.features.beachfront.title,
-      description: t.home.amenities.features.beachfront.description
+      title: t?.home?.amenities?.features?.beachfront?.title ?? "Beachfront access",
+      description: t?.home?.amenities?.features?.beachfront?.description ?? "Steps from the sea for unforgettable views",
     },
     {
       icon: <LifeBuoy className="h-8 w-8 text-primary" />,
-      title: t.home.amenities.features.pools.title,
-      description: t.home.amenities.features.pools.description
+      title: t?.home?.amenities?.features?.pools?.title ?? "Multiple pools",
+      description: t?.home?.amenities?.features?.pools?.description ?? "Relax in our serene pool areas",
     },
     {
       icon: <Utensils className="h-8 w-8 text-primary" />,
-      title: t.home.amenities.features.restaurant.title,
-      description: t.home.amenities.features.restaurant.description
+      title: t?.home?.amenities?.features?.restaurant?.title ?? "Restaurant on-site",
+      description: t?.home?.amenities?.features?.restaurant?.description ?? "Local flavors and international cuisine",
     },
     {
       icon: <Wifi className="h-8 w-8 text-primary" />,
-      title: t.home.amenities.features.wifi.title,
-      description: t.home.amenities.features.wifi.description
+      title: t?.home?.amenities?.features?.wifi?.title ?? "High‑speed Wi‑Fi",
+      description: t?.home?.amenities?.features?.wifi?.description ?? "Stay connected everywhere",
     },
     {
       icon: <Coffee className="h-8 w-8 text-primary" />,
-      title: t.home.amenities.features.bar.title,
-      description: t.home.amenities.features.bar.description
+      title: t?.home?.amenities?.features?.bar?.title ?? "Cafe & Bar",
+      description: t?.home?.amenities?.features?.bar?.description ?? "Specialty coffee and crafted drinks",
     },
     {
       icon: <MapPin className="h-8 w-8 text-primary" />,
-      title: t.home.amenities.features.location.title,
-      description: t.home.amenities.features.location.description
+      title: t?.home?.amenities?.features?.location?.title ?? "Prime location",
+      description: t?.home?.amenities?.features?.location?.description ?? "Close to attractions and transport",
     }
   ];
   
@@ -103,20 +103,20 @@ export default function Index() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               <div className="animate-fade-in [animation-delay:100ms]">
                 <span className="text-sm text-primary font-medium uppercase tracking-wider">
-                  {t.home.welcome.subtitle}
+                  {t?.home?.welcome?.subtitle ?? "Welcome"}
                 </span>
                 <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-6">
-                  {t.home.welcome.title}
+                  {t?.home?.welcome?.title ?? "Experience seaside comfort"}
                 </h2>
                 <p className="text-muted-foreground mb-6">
-                  {t.home.welcome.description1}
+                  {t?.home?.welcome?.description1 ?? "Discover our curated stays by the sea."}
                 </p>
                 <p className="text-muted-foreground mb-8">
-                  {t.home.welcome.description2}
+                  {t?.home?.welcome?.description2 ?? "Enjoy premium amenities and unforgettable views."}
                 </p>
                 <Button asChild className="btn-primary">
                   <Link to="/about">
-                    {t.home.welcome.learnMore} <ArrowRight className="ml-2 h-4 w-4" />
+                    {(t?.home?.welcome?.learnMore ?? "Learn more")} <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
               </div>
@@ -154,16 +154,24 @@ export default function Index() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               <div className="animate-fade-in">
                 <span className="text-sm text-primary font-medium uppercase tracking-wider">
-                  {t.home.booking.subtitle}
+                  {t?.home?.booking?.subtitle ?? "Booking"}
                 </span>
                 <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-6">
-                  {t.home.booking.title}
+                  {t?.home?.booking?.title ?? "Book your stay"}
                 </h2>
                 <p className="text-muted-foreground mb-6">
-                  {t.home.booking.description}
+                  {t?.home?.booking?.description ?? "Secure your apartment in just a few clicks."}
                 </p>
                 <ul className="space-y-3 mb-8">
-                  {t.home.booking.benefits.map((item, index) => (
+                  {(
+                    Array.isArray(t?.home?.booking?.benefits)
+                      ? t.home.booking.benefits
+                      : [
+                          "Instant confirmation",
+                          "Flexible cancellation",
+                          "Best price guaranteed",
+                        ]
+                  ).map((item, index) => (
                     <li key={index} className="flex items-center">
                       <div className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center mr-3">
                         <ArrowRight className="h-3 w-3" />
@@ -190,13 +198,13 @@ export default function Index() {
           <div className="container">
             <div className="text-center max-w-3xl mx-auto mb-12 animate-fade-in">
               <span className="text-sm text-primary font-medium uppercase tracking-wider">
-                {t.home.featuredApartments.subtitle}
+                {t?.home?.featuredApartments?.subtitle ?? "Featured"}
               </span>
               <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-4">
-                {t.home.featuredApartments.title}
+                {t?.home?.featuredApartments?.title ?? "Popular apartments"}
               </h2>
               <p className="text-muted-foreground">
-                {t.home.featuredApartments.description}
+                {t?.home?.featuredApartments?.description ?? "Hand‑picked stays you'll love"}
               </p>
             </div>
             
@@ -211,7 +219,7 @@ export default function Index() {
             <div className="text-center mt-12">
               <Button asChild className="btn-primary">
                 <Link to="/apartments">
-                  {t.home.featuredApartments.viewAll} <ArrowRight className="ml-2 h-4 w-4" />
+                  {(t?.home?.featuredApartments?.viewAll ?? "View all")} <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
             </div>
@@ -226,13 +234,13 @@ export default function Index() {
           <div className="container">
             <div className="text-center max-w-3xl mx-auto mb-12 animate-fade-in">
               <span className="text-sm text-primary font-medium uppercase tracking-wider">
-                {t.home.amenities.subtitle}
+                {t?.home?.amenities?.subtitle ?? "Amenities"}
               </span>
               <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-4">
-                {t.home.amenities.title}
+                {t?.home?.amenities?.title ?? "Everything you need"}
               </h2>
               <p className="text-muted-foreground">
-                {t.home.amenities.description}
+                {t?.home?.amenities?.description ?? "Carefully selected comforts for a perfect stay."}
               </p>
             </div>
             
@@ -259,13 +267,13 @@ export default function Index() {
           <div className="container">
             <div className="max-w-3xl mx-auto text-center animate-fade-in">
               <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                {t.home.cta.title}
+                {t?.home?.cta?.title ?? "Ready to book your stay?"}
               </h2>
               <p className="text-muted-foreground mb-8">
-                {t.home.cta.description}
+                {t?.home?.cta?.description ?? "Reserve your apartment in minutes with instant confirmation."}
               </p>
               <Button asChild size="lg" className="btn-primary">
-                <Link to="/booking">{t.home.cta.bookNow}</Link>
+                <Link to="/booking">{t?.home?.cta?.bookNow ?? "Book now"}</Link>
               </Button>
             </div>
           </div>

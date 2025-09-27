@@ -11,10 +11,10 @@ export interface ApartmentProps {
   description: string;
   price: number;
   capacity: number;
-  size: number;
+  size?: number; // made optional to support Supabase rows without this field
   image: string;
   location: string;
-  features: string[];
+  features?: string[]; // made optional to support Supabase rows without this field
 }
 
 export default function ApartmentCard({ apartment }: { apartment: ApartmentProps }) {
@@ -29,6 +29,9 @@ export default function ApartmentCard({ apartment }: { apartment: ApartmentProps
   const translatedDescription = language !== 'en' && t.apartmentDescriptions?.[apartment.id]?.description 
     ? t.apartmentDescriptions![apartment.id]!.description 
     : apartment.description;
+
+  const features = apartment.features ?? [];
+  const hasSize = typeof apartment.size === 'number' && !Number.isNaN(apartment.size);
   
   return (
     <div 
@@ -58,10 +61,12 @@ export default function ApartmentCard({ apartment }: { apartment: ApartmentProps
                 <span>{apartment.capacity} {apartment.capacity === 1 ? 
                   t.apartments.filters.guests : t.apartments.filters.guests}</span>
               </div>
-              <div className="flex items-center">
-                <Maximize className="h-4 w-4 mr-1" />
-                <span>{apartment.size} m²</span>
-              </div>
+              {hasSize && (
+                <div className="flex items-center">
+                  <Maximize className="h-4 w-4 mr-1" />
+                  <span>{apartment.size} m²</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -70,24 +75,26 @@ export default function ApartmentCard({ apartment }: { apartment: ApartmentProps
       <div className="p-6 space-y-4">
         <p className="text-muted-foreground line-clamp-2">{translatedDescription}</p>
         
-        <div className="flex flex-wrap gap-2">
-          {apartment.features.slice(0, 3).map((feature, index) => (
-            <div 
-              key={index} 
-              className="flex items-center text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full"
-            >
-              {feature === "Bathroom" && <Bath className="h-3.5 w-3.5 mr-1" />}
-              {feature === "Kitchen" && <Coffee className="h-3.5 w-3.5 mr-1" />}
-              {feature === "Wi-Fi" && <Wifi className="h-3.5 w-3.5 mr-1" />}
-              <span>{feature}</span>
-            </div>
-          ))}
-          {apartment.features.length > 3 && (
-            <div className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full">
-              +{apartment.features.length - 3} {t.apartments.filters.more}
-            </div>
-          )}
-        </div>
+        {features.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {features.slice(0, 3).map((feature, index) => (
+              <div 
+                key={index} 
+                className="flex items-center text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full"
+              >
+                {feature === "Bathroom" && <Bath className="h-3.5 w-3.5 mr-1" />}
+                {feature === "Kitchen" && <Coffee className="h-3.5 w-3.5 mr-1" />}
+                {feature === "Wi-Fi" && <Wifi className="h-3.5 w-3.5 mr-1" />}
+                <span>{feature}</span>
+              </div>
+            ))}
+            {features.length > 3 && (
+              <div className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full">
+                +{features.length - 3} {t.apartments.filters.more}
+              </div>
+            )}
+          </div>
+        )}
         
         <div className="flex items-end justify-between pt-2">
           <div>

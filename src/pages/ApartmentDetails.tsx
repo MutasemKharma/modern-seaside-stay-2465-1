@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -7,15 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { getApartmentById } from "@/data/apartments";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 import { toast } from "sonner";
 
 export default function ApartmentDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const apartment = useMemo(() => (id ? getApartmentById(id) : undefined), [id]);
+  const [apartment, setApartment] = useState<any | null>(null);
+  const [loadingApartment, setLoadingApartment] = useState<boolean>(true);
 
   const [form, setForm] = useState({
     fullName: "",
@@ -27,6 +27,43 @@ export default function ApartmentDetails() {
     notes: "",
   });
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchApartment = async () => {
+      if (!id) return;
+      try {
+        setLoadingApartment(true);
+        const supabase = getSupabase();
+        const { data, error } = await supabase
+          .from("apartments")
+          .select("id, name, description, price, capacity, location, image")
+          .eq("id", id)
+          .maybeSingle();
+        if (error) throw error;
+        setApartment(data || null);
+      } catch (e) {
+        console.error("Failed to load apartment:", e);
+        setApartment(null);
+      } finally {
+        setLoadingApartment(false);
+      }
+    };
+    fetchApartment();
+    // Scroll top on mount
+    window.scrollTo(0, 0);
+  }, [id]);
+
+  if (loadingApartment) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 pt-24 container">
+          <div className="text-center py-20">Loading…</div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!apartment) {
     return (
@@ -50,6 +87,7 @@ export default function ApartmentDetails() {
         return;
       }
       setLoading(true);
+      const supabase = getSupabase();
       const { error } = await supabase.from("bookings").insert({
         apartment_id: apartment.id,
         apartment_name: apartment.name,

@@ -1,105 +1,191 @@
-
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ThemeToggle from "./ThemeToggle";
 import LanguageSelector from "./LanguageSelector";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { BRAND_NAME } from "@/lib/branding";
+import { useAuth } from "@/contexts/AuthContext";
+
+const NAV_LINKS = [
+  { path: "/", key: "home" },
+  { path: "/chalets", key: "chalets" },
+  { path: "/offers", key: "offers" },
+  { path: "/transport", key: "transport" },
+  { path: "/support", key: "support" },
+];
+
+const DASHBOARD_LINKS = [
+  { path: "/customer", key: "customer" },
+  { path: "/owner", key: "owner" },
+  { path: "/admin", key: "admin" },
+  { path: "/ops", key: "ops" },
+];
 
 export default function Navbar() {
   const { t } = useLanguage();
+  const { user, isAuthenticated, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  
-  const navLinks = [
-    { name: t.nav.home, path: "/" },
-    { name: t.nav.apartments, path: "/apartments" },
-    { name: t.nav.amenities, path: "/amenities" },
-    { name: t.nav.gallery, path: "/gallery" },
-    { name: t.nav.contact, path: "/contact" }
-  ];
 
   useEffect(() => {
     const handleScroll = () => {
-      const isScrolled = window.scrollY > 20;
-      if (isScrolled !== scrolled) {
-        setScrolled(isScrolled);
-      }
+      setScrolled(window.scrollY > 20);
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [scrolled]);
-  
-  return <header className={cn("fixed top-0 left-0 right-0 z-50 transition-all duration-300", scrolled ? "bg-white/80 dark:bg-card/80 backdrop-blur-lg py-3 shadow-md" : "bg-transparent py-5")}>
-      <nav className="container flex justify-between items-center">
-        <div className="flex items-center space-x-2">
+  }, []);
+
+  const renderNavLinks = () => (
+    <ul className="hidden lg:flex items-center gap-6">
+      {NAV_LINKS.map((link) => (
+        <li key={link.key}>
+          <NavLink
+            to={link.path}
+            className={({ isActive }) =>
+              cn(
+                "font-medium transition-colors hover:text-primary",
+                isActive ? "text-primary" : "text-foreground/80",
+              )
+            }
+          >
+            {t.nav[link.key as keyof typeof t.nav]}
+          </NavLink>
+        </li>
+      ))}
+      <li>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold text-muted-foreground">{t.nav.dashboards}</span>
+          <div className="flex items-center gap-2">
+            {DASHBOARD_LINKS.map((link) => (
+              <NavLink
+                key={link.key}
+                to={link.path}
+                className={({ isActive }) =>
+                  cn(
+                    "rounded-full border px-3 py-1 text-xs transition-colors",
+                    isActive ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground",
+                  )
+                }
+              >
+                {t.nav[link.key as keyof typeof t.nav]}
+              </NavLink>
+            ))}
+          </div>
+        </div>
+      </li>
+    </ul>
+  );
+
+  const renderAuthActions = () => (
+    <div className="hidden lg:flex items-center gap-2">
+      <LanguageSelector />
+      <ThemeToggle />
+      {isAuthenticated ? (
+        <Button variant="outline" onClick={logout}>
+          {t.nav.logout}
+        </Button>
+      ) : (
+        <Button asChild>
+          <Link to="/login">{t.nav.login}</Link>
+        </Button>
+      )}
+    </div>
+  );
+
+  return (
+    <header
+      className={cn(
+        "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
+        scrolled ? "bg-background/90 backdrop-blur shadow" : "bg-background/70",
+      )}
+    >
+      <nav className="container flex items-center justify-between py-4">
+        <Link to="/" className="flex flex-col text-end lg:text-start">
+          <span className="text-xs uppercase tracking-widest text-primary">{BRAND_NAME}</span>
+          <span className="text-sm text-muted-foreground">{t.brand.subheadline}</span>
+        </Link>
+
+        {renderNavLinks()}
+        {renderAuthActions()}
+
+        <div className="flex items-center gap-2 lg:hidden">
           <LanguageSelector />
-        </div>
-
-        {/* Desktop Navigation */}
-        <ul className="hidden md:flex space-x-8">
-          {navLinks.map(link => <li key={link.name} className="relative">
-              <Link to={link.path} className="font-medium transition-colors hover:text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:w-0 after:bg-primary after:transition-all hover:after:w-full">
-                {link.name}
-              </Link>
-            </li>)}
-        </ul>
-
-        <div className="hidden md:flex items-center space-x-2">
           <ThemeToggle />
-          <Button variant="ghost" asChild>
-            <Link to="/login">{t.nav.ownerLogin}</Link>
-          </Button>
-          <Button asChild className="btn-primary">
-            <Link to="/booking">{t.nav.bookNow}</Link>
-          </Button>
-        </div>
-
-        {/* Mobile Navigation */}
-        <div className="md:hidden flex items-center space-x-2">
-          <ThemeToggle />
-          <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="rounded-full">
+          <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen((open) => !open)}>
             {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </Button>
         </div>
       </nav>
 
-      {/* Mobile Menu */}
-      <div className={cn("fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden transition-opacity duration-300", mobileMenuOpen ? "opacity-100" : "opacity-0 pointer-events-none")}>
-        <div className={cn("fixed inset-y-0 right-0 w-3/4 max-w-sm bg-card shadow-xl p-6 transition-transform duration-300 ease-in-out", mobileMenuOpen ? "translate-x-0" : "translate-x-full")}>
-          <div className="flex flex-col h-full justify-between">
-            <div>
-              <div className="flex justify-between mb-8">
-                <LanguageSelector />
-                <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(false)} className="rounded-full">
-                  <X className="h-6 w-6" />
-                </Button>
+      <div
+        className={cn(
+          "lg:hidden fixed inset-0 z-40 bg-background/80 backdrop-blur-sm transition-opacity",
+          mobileMenuOpen ? "opacity-100" : "pointer-events-none opacity-0",
+        )}
+      >
+        <div
+          className={cn(
+            "fixed inset-y-0 end-0 w-80 max-w-[85vw] overflow-y-auto bg-card p-6 shadow-xl transition-transform",
+            mobileMenuOpen ? "translate-x-0" : "translate-x-full",
+          )}
+        >
+          <div className="flex items-center justify-between">
+            <div className="text-lg font-semibold">{BRAND_NAME}</div>
+            <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(false)}>
+              <X className="h-6 w-6" />
+            </Button>
+          </div>
+          <div className="mt-6 flex flex-col gap-4">
+            {NAV_LINKS.map((link) => (
+              <NavLink
+                key={link.key}
+                to={link.path}
+                onClick={() => setMobileMenuOpen(false)}
+                className={({ isActive }) =>
+                  cn("text-base font-medium", isActive ? "text-primary" : "text-foreground/80")
+                }
+              >
+                {t.nav[link.key as keyof typeof t.nav]}
+              </NavLink>
+            ))}
+            <div className="border-t pt-4">
+              <p className="text-sm font-semibold text-muted-foreground">{t.nav.dashboards}</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {DASHBOARD_LINKS.map((link) => (
+                  <NavLink
+                    key={link.key}
+                    to={link.path}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={({ isActive }) =>
+                      cn(
+                        "rounded-full border px-3 py-1 text-xs",
+                        isActive ? "border-primary text-primary" : "border-border text-muted-foreground",
+                      )
+                    }
+                  >
+                    {t.nav[link.key as keyof typeof t.nav]}
+                  </NavLink>
+                ))}
               </div>
-              <ul className="space-y-6">
-                {navLinks.map(link => <li key={link.name}>
-                    <Link to={link.path} className="text-lg font-medium transition-colors hover:text-primary" onClick={() => setMobileMenuOpen(false)}>
-                      {link.name}
-                    </Link>
-                  </li>)}
-              </ul>
             </div>
-            
-            <div className="flex flex-col gap-2 mt-6">
-              <Button variant="ghost" asChild className="w-full">
-                <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
-                  {t.nav.ownerLogin}
-                </Link>
-              </Button>
-              <Button asChild className="w-full btn-primary">
-                <Link to="/booking" onClick={() => setMobileMenuOpen(false)}>
-                  {t.nav.bookNow}
-                </Link>
-              </Button>
+            <div className="border-t pt-4">
+              {isAuthenticated ? (
+                <Button className="w-full" variant="secondary" onClick={() => (logout(), setMobileMenuOpen(false))}>
+                  {t.nav.logout}
+                </Button>
+              ) : (
+                <Button className="w-full" onClick={() => setMobileMenuOpen(false)} asChild>
+                  <Link to="/login">{t.nav.login}</Link>
+                </Button>
+              )}
             </div>
+            <p className="text-xs text-muted-foreground">{t.auth.currentRole(user?.name ?? t.nav.home)}</p>
           </div>
         </div>
       </div>
-    </header>;
+    </header>
+  );
 }

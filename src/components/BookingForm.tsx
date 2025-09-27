@@ -1,172 +1,152 @@
-
-import { useState } from "react";
-import { Check, CalendarIcon, Users } from "lucide-react";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+import { useMemo, useState } from "react";
+import { addDays, format } from "date-fns";
+import { arSA, enUS } from "date-fns/locale";
+import { CalendarIcon, Bus, Gift, UtensilsCrossed } from "lucide-react";
+import { DateRange } from "react-day-picker";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { bookingAddons, calculateCashback } from "@/data/chalets";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { BRAND_NAME, COD_PROVINCES } from "@/lib/branding";
+
+const defaultDate: DateRange = {
+  from: new Date(),
+  to: addDays(new Date(), 2),
+};
 
 export default function BookingForm() {
-  const { t } = useLanguage();
-  const [startDate, setStartDate] = useState<Date>();
-  const [endDate, setEndDate] = useState<Date>();
-  const [adults, setAdults] = useState("2");
-  const [children, setChildren] = useState("0");
-  const [submitted, setSubmitted] = useState(false);
+  const { language, t } = useLanguage();
+  const [date, setDate] = useState<DateRange | undefined>(defaultDate);
+  const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
+  const nights = useMemo(() => {
+    if (!date?.from || !date?.to) return 1;
+    return Math.max(1, Math.round((date.to.getTime() - date.from.getTime()) / (1000 * 60 * 60 * 24)));
+  }, [date]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // In a real app, this would send the booking data to a server
-    console.log("Booking submitted:", { startDate, endDate, adults, children });
-    setSubmitted(true);
-    
-    // Reset form after 3 seconds
-    setTimeout(() => {
-      setSubmitted(false);
-    }, 3000);
-  };
+  const subtotal = 950 * nights;
+  const addonsTotal = selectedAddons.reduce((acc, addonId) => {
+    const addon = bookingAddons.find((item) => item.id === addonId);
+    return addon ? acc + addon.price : acc;
+  }, 0);
+  const total = subtotal + addonsTotal;
+  const cashback = calculateCashback(subtotal, undefined, nights);
 
   return (
-    <form 
-      onSubmit={handleSubmit} 
-      className="glass-card p-6 space-y-6 animate-fade-in [animation-delay:200ms]"
-    >
-      <h3 className="text-2xl font-bold text-center mb-6">{t.bookingForm.title}</h3>
-      
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Check-in Date */}
-          <div className="space-y-2">
-            <label htmlFor="check-in" className="block text-sm font-medium">
-              {t.bookingForm.checkIn}
+    <Card className="border-2 border-primary/10">
+      <CardHeader>
+        <CardTitle className="text-2xl font-bold text-right" dir="rtl">
+          {t.booking.title}
+        </CardTitle>
+        <p className="text-sm text-muted-foreground" dir="rtl">
+          {t.booking.contactlessSupport}
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-6" dir="rtl">
+        <div className="grid gap-4">
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-semibold" htmlFor="dates">
+              {t.search.filters.date}
             </label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
-                  id="check-in"
+                  id="dates"
                   variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !startDate && "text-muted-foreground"
-                  )}
+                  className="justify-between text-right"
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {startDate ? format(startDate, "PPP") : <span>{t.bookingForm.selectDate}</span>}
+                  <CalendarIcon className="h-4 w-4" />
+                  <span>
+                    {date?.from && date?.to
+                      ? `${format(date.from, "PPP", { locale: language === "ar" ? arSA : enUS })} - ${format(date.to, "PPP", {
+                          locale: language === "ar" ? arSA : enUS,
+                        })}`
+                      : t.search.subtitle}
+                  </span>
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
+              <PopoverContent className="w-auto p-0" align="end">
                 <Calendar
-                  mode="single"
-                  selected={startDate}
-                  onSelect={setStartDate}
-                  initialFocus
-                  disabled={(date) => date < new Date()}
-                  className="pointer-events-auto"
+                  mode="range"
+                  selected={date}
+                  onSelect={setDate}
+                  numberOfMonths={2}
+                  locale={language === "ar" ? arSA : enUS}
+                  disabled={{ before: new Date() }}
                 />
               </PopoverContent>
             </Popover>
           </div>
-          
-          {/* Check-out Date */}
-          <div className="space-y-2">
-            <label htmlFor="check-out" className="block text-sm font-medium">
-              {t.bookingForm.checkOut}
-            </label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  id="check-out"
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !endDate && "text-muted-foreground"
-                  )}
+          <div className="grid gap-3">
+            <h3 className="text-sm font-semibold">{t.chalet.sections.addons}</h3>
+            <div className="grid gap-3">
+              {bookingAddons.map((addon) => (
+                <button
+                  key={addon.id}
+                  onClick={() =>
+                    setSelectedAddons((prev) =>
+                      prev.includes(addon.id) ? prev.filter((id) => id !== addon.id) : [...prev, addon.id],
+                    )
+                  }
+                  className={`flex items-center justify-between rounded-xl border p-4 text-right transition-colors ${
+                    selectedAddons.includes(addon.id)
+                      ? "border-primary bg-primary/10"
+                      : "border-border hover:border-primary/50"
+                  }`}
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {endDate ? format(endDate, "PPP") : <span>{t.bookingForm.selectDate}</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={endDate}
-                  onSelect={setEndDate}
-                  initialFocus
-                  disabled={(date) => date < (startDate || new Date())}
-                  className="pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
+                  <div className="flex items-center gap-3">
+                    {addon.type === "bus" && <Bus className="h-5 w-5 text-primary" />}
+                    {addon.type === "food" && <UtensilsCrossed className="h-5 w-5 text-primary" />}
+                    {addon.type === "gift" && <Gift className="h-5 w-5 text-primary" />}
+                    <div>
+                      <p className="font-medium">{addon.title}</p>
+                      <p className="text-xs text-muted-foreground">{addon.description}</p>
+                    </div>
+                  </div>
+                  <Badge variant={selectedAddons.includes(addon.id) ? "default" : "outline"}>
+                    {addon.price === 0 ? "هدية" : `${addon.price.toLocaleString()} ر.س`}
+                  </Badge>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Adults */}
-          <div className="space-y-2">
-            <label htmlFor="adults" className="block text-sm font-medium">
-              {t.bookingForm.adults}
-            </label>
-            <Select value={adults} onValueChange={setAdults}>
-              <SelectTrigger id="adults" className="w-full">
-                <SelectValue placeholder="Select" />
-              </SelectTrigger>
-              <SelectContent>
-                {[1, 2, 3, 4, 5, 6].map((num) => (
-                  <SelectItem key={num} value={num.toString()}>
-                    {num} {num === 1 ? t.bookingForm.adult : t.bookingForm.adults}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      </CardContent>
+      <CardFooter className="flex flex-col gap-4" dir="rtl">
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span>{t.booking.summary}</span>
+            <span>{subtotal.toLocaleString()} ر.س</span>
           </div>
-          
-          {/* Children */}
-          <div className="space-y-2">
-            <label htmlFor="children" className="block text-sm font-medium">
-              {t.bookingForm.children}
-            </label>
-            <Select value={children} onValueChange={setChildren}>
-              <SelectTrigger id="children" className="w-full">
-                <SelectValue placeholder="Select" />
-              </SelectTrigger>
-              <SelectContent>
-                {[0, 1, 2, 3, 4].map((num) => (
-                  <SelectItem key={num} value={num.toString()}>
-                    {num} {num === 1 ? t.bookingForm.child : t.bookingForm.children}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex justify-between text-muted-foreground">
+            <span>{t.chalet.sections.addons}</span>
+            <span>{addonsTotal.toLocaleString()} ر.س</span>
+          </div>
+          <div className="flex justify-between font-semibold text-primary">
+            <span>المجموع</span>
+            <span>{total.toLocaleString()} ر.س</span>
+          </div>
+          <div className="flex justify-between text-emerald-600">
+            <span>{t.booking.cashback}</span>
+            <span>{cashback.toLocaleString()} ر.س</span>
           </div>
         </div>
-      </div>
-      
-      <Button type="submit" className="w-full btn-primary relative">
-        {submitted ? (
-          <>
-            <Check className="mr-2 h-4 w-4" />
-            {t.bookingForm.bookingConfirmed}
-          </>
-        ) : (
-          <>
-            <Users className="mr-2 h-4 w-4" />
-            {t.bookingForm.checkAvailability}
-          </>
-        )}
-      </Button>
-    </form>
+        <div className="rounded-xl border border-dashed border-primary/40 bg-primary/5 p-4 text-sm text-muted-foreground">
+          <p>{t.booking.paymentMethods}</p>
+          <ul className="list-disc pe-5 text-right">
+            <li>{t.booking.stripe}</li>
+            <li>
+              {t.booking.cod} – {COD_PROVINCES.length ? COD_PROVINCES.join(", ") : "غير متاح حالياً"}
+            </li>
+          </ul>
+        </div>
+        <Button size="lg" className="w-full">
+          {t.booking.confirm}
+        </Button>
+        <p className="text-xs text-center text-muted-foreground">{BRAND_NAME} • {t.booking.success}</p>
+      </CardFooter>
+    </Card>
   );
 }

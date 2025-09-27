@@ -1,6 +1,5 @@
 // Prisma schema for Development (SQLite)
-// Use with: npx prisma generate --schema prisma/schema.dev.prisma
-//           npx prisma db push --schema prisma/schema.dev.prisma
+// Mirrors production data model for local testing
 
 generator client {
   provider = "prisma-client-js"
@@ -11,46 +10,337 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Apartment {
-  id                 Int       @id @default(autoincrement())
-  name               String
-  description        String
-  pricePerNightCents Int
-  capacity           Int
-  sizeSqm            Int
-  location           String
-  features           Json
-  images             Json
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-
-  bookings           Booking[]
+enum UserRole {
+  GUEST
+  CUSTOMER
+  CHALET_OWNER
+  ADMIN
+  OPS
 }
 
-model Booking {
-  id           Int       @id @default(autoincrement())
-  apartmentId  Int
-  apartment    Apartment @relation(fields: [apartmentId], references: [id])
-  guestName    String
-  email        String
-  phone        String?
-  checkIn      DateTime
-  checkOut     DateTime
-  guests       Int
-  status       BookingStatus @default(PENDING)
-  createdAt    DateTime  @default(now())
+enum UserStatus {
+  ACTIVE
+  INVITED
+  SUSPENDED
+  DISABLED
 }
 
 enum BookingStatus {
   PENDING
   CONFIRMED
+  COMPLETED
   CANCELLED
 }
 
-model Testimonial {
+enum PayoutStatus {
+  PENDING
+  READY
+  PAID
+  FAILED
+}
+
+enum CashbackStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  REVOKED
+}
+
+enum TransportStatus {
+  REQUESTED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum MaintenanceType {
+  SANITIZATION
+  CLEANING
+  MAINTENANCE
+}
+
+enum MaintenanceStatus {
+  REQUESTED
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+enum PromoType {
+  PERCENT
+  FIXED
+  GIFT
+}
+
+enum SupportStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  APPROVE
+  REJECT
+  PAYOUT
+}
+
+model User {
+  id           Int           @id @default(autoincrement())
+  email        String        @unique
+  phone        String?       @unique
+  name         String
+  passwordHash String?
+  role         UserRole      @default(GUEST)
+  status       UserStatus    @default(ACTIVE)
+  locale       String        @default("ar")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  customerProfile CustomerProfile?
+  ownerProfile    OwnerProfile?
+  tickets         SupportTicket[]       @relation("UserTickets")
+  assignedTickets SupportTicket[]       @relation("TicketAssignee")
+  auditLogs       AuditLog[]
+}
+
+model CustomerProfile {
+  id            Int               @id @default(autoincrement())
+  user          User              @relation(fields: [userId], references: [id])
+  userId        Int               @unique
+  defaultProvince String?
+  walletBalance Decimal           @default(0)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  bookings      Booking[]
+  cashback      CashbackCredit[]
+  wallet        WalletTransaction[]
+}
+
+model OwnerProfile {
+  id               Int            @id @default(autoincrement())
+  user             User           @relation(fields: [userId], references: [id])
+  userId           Int            @unique
+  kycStatus        String         @default("pending")
+  payoutAccountRef String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  chalets          Chalet[]
+  maintenanceOrders MaintenanceOrder[]
+}
+
+model Chalet {
+  id                Int              @id @default(autoincrement())
+  owner             OwnerProfile     @relation(fields: [ownerId], references: [id])
+  ownerId           Int
+  title             String
+  slug              String           @unique
+  description       String
+  province          String
+  address           String
+  latitude          Decimal          @db.Decimal(10, 7)
+  longitude         Decimal          @db.Decimal(10, 7)
+  capacity          Int
+  basePrice         Decimal          @db.Decimal(10, 2)
+  cleaningFee       Decimal          @default(0)
+  amenities         Json
+  rules             Json
+  photos            Json
+  verified          Boolean          @default(false)
+  sanitationBadge   String?
+  poolSanitized     Boolean          @default(false)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  calendars         ChaletCalendar[]
+  bookings          Booking[]
+  sanitationLogs    MaintenanceOrder[]
+}
+
+model ChaletCalendar {
   id        Int      @id @default(autoincrement())
-  author    String
+  chalet    Chalet   @relation(fields: [chaletId], references: [id])
+  chaletId  Int
+  date      DateTime
+  status    String    @default("available")
+  price     Decimal?  @db.Decimal(10, 2)
+
+  @@unique([chaletId, date])
+}
+
+model Booking {
+  id               Int            @id @default(autoincrement())
+  customer         CustomerProfile @relation(fields: [customerId], references: [id])
+  customerId       Int
+  chalet           Chalet         @relation(fields: [chaletId], references: [id])
+  chaletId         Int
+  startDate        DateTime
+  endDate          DateTime
+  guests           Int
+  subtotal         Decimal        @db.Decimal(10, 2)
+  fees             Decimal        @db.Decimal(10, 2)
+  discounts        Decimal        @db.Decimal(10, 2)
+  commission       Decimal        @db.Decimal(10, 2)
+  total            Decimal        @db.Decimal(10, 2)
+  status           BookingStatus  @default(PENDING)
+  paymentIntentId  String?
+  payoutStatus     PayoutStatus   @default(PENDING)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  transport        BookingTransport?
+  cashbackCredit   CashbackCredit?
+  review           Review?
+}
+
+model BookingTransport {
+  id          Int            @id @default(autoincrement())
+  booking     Booking        @relation(fields: [bookingId], references: [id])
+  bookingId   Int            @unique
+  route       BusRoute?      @relation(fields: [routeId], references: [id])
+  routeId     Int?
+  charterMeta Json?
+  seats       Int            @default(0)
+  price       Decimal        @db.Decimal(10, 2)
+  status      TransportStatus @default(REQUESTED)
+}
+
+model BusPartner {
+  id        Int        @id @default(autoincrement())
+  name      String
+  contactMasked String
+  verified  Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  routes    BusRoute[]
+}
+
+model BusRoute {
+  id            Int        @id @default(autoincrement())
+  partner       BusPartner @relation(fields: [partnerId], references: [id])
+  partnerId     Int
+  provinceFrom  String
+  provinceTo    String
+  pickupPoints  Json
+  schedule      String
+  capacity      Int
+  charterAvailable Boolean @default(false)
+  basePrice     Decimal    @db.Decimal(10, 2)
+  discount      Decimal    @default(0) @db.Decimal(5, 2)
+  blackoutDates Json?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  bookings      BookingTransport[]
+}
+
+model CashbackCredit {
+  id          Int             @id @default(autoincrement())
+  customer    CustomerProfile @relation(fields: [customerId], references: [id])
+  customerId  Int
+  booking     Booking         @relation(fields: [bookingId], references: [id])
+  bookingId   Int             @unique
+  amount      Decimal         @db.Decimal(10, 2)
+  creditedAt  DateTime        @default(now())
+  expiresAt   DateTime
+  status      CashbackStatus  @default(PENDING)
+}
+
+model WalletTransaction {
+  id         Int             @id @default(autoincrement())
+  customer   CustomerProfile @relation(fields: [customerId], references: [id])
+  customerId Int
+  type       String
+  amount     Decimal         @db.Decimal(10, 2)
+  reference  String
+  createdAt  DateTime        @default(now())
+}
+
+model MaintenanceOrder {
+  id             Int              @id @default(autoincrement())
+  owner          OwnerProfile     @relation(fields: [ownerId], references: [id])
+  ownerId        Int
+  chalet         Chalet           @relation(fields: [chaletId], references: [id])
+  chaletId       Int
+  type           MaintenanceType
+  scheduledAt    DateTime
+  provider       String
+  price          Decimal          @db.Decimal(10, 2)
+  discountApplied Decimal         @db.Decimal(10, 2)
+  status         MaintenanceStatus @default(REQUESTED)
+  attachments    Json?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+}
+
+model PromoCode {
+  id          Int       @id @default(autoincrement())
+  code        String    @unique
+  type        PromoType
+  value       Decimal   @db.Decimal(10, 2)
+  constraints Json?
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Gift {
+  id        Int      @id @default(autoincrement())
+  name      String
+  rules     Json
+  inventory Int      @default(0)
+  active    Boolean  @default(true)
+}
+
+model SupportTicket {
+  id         Int          @id @default(autoincrement())
+  createdBy  User         @relation("UserTickets", fields: [createdById], references: [id])
+  createdById Int
+  assignee   User?        @relation("TicketAssignee", fields: [assigneeId], references: [id])
+  assigneeId Int?
+  subject    String
+  messages   Json
+  status     SupportStatus @default(OPEN)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  booking   Booking  @relation(fields: [bookingId], references: [id])
+  bookingId Int      @unique
   rating    Int
-  content   String
+  comment   String
+  moderatedStatus String @default("pending")
   createdAt DateTime @default(now())
+}
+
+model CmsPage {
+  id        Int      @id @default(autoincrement())
+  slug      String   @unique
+  title     String
+  body      String
+  locale    String   @default("ar")
+  published Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+}
+
+model SeoMeta {
+  id        Int      @id @default(autoincrement())
+  route     String   @unique
+  title     String
+  description String
+  schema    Json?
+}
+
+model AuditLog {
+  id        Int         @id @default(autoincrement())
+  actor     User?       @relation(fields: [actorId], references: [id])
+  actorId   Int?
+  action    AuditAction
+  entity    String
+  entityId  String
+  metadata  Json?
+  createdAt DateTime    @default(now())
 }

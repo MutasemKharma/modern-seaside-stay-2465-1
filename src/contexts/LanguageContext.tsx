@@ -1,54 +1,55 @@
+import React, { createContext, useContext, useEffect, useMemo, useState, ReactNode } from "react";
+import { ar } from "../locales/ar";
+import { en } from "../locales/en";
 
-import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
-import { en } from '../locales/en';
-import { it } from '../locales/it';
+type Translations = typeof ar;
 
-type Translations = typeof en;
+export type SupportedLocale = "ar" | "en";
 
 interface LanguageContextType {
-  language: string;
-  setLanguage: (lang: string) => void;
+  language: SupportedLocale;
+  setLanguage: (lang: SupportedLocale) => void;
   t: Translations;
 }
 
-const translations: Record<string, Translations> = {
+const translations: Record<SupportedLocale, Translations> = {
+  ar,
   en,
-  it
 };
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
-  const [language, setLanguage] = useState('en');
-  const [t, setT] = useState<Translations>(translations.en);
+  const [language, setLanguageState] = useState<SupportedLocale>("ar");
 
   useEffect(() => {
-    const savedLanguage = localStorage.getItem('language');
-    if (savedLanguage && translations[savedLanguage]) {
-      setLanguage(savedLanguage);
-      setT(translations[savedLanguage]);
+    const savedLanguage = (localStorage.getItem("language") as SupportedLocale | null) ?? "ar";
+    if (translations[savedLanguage]) {
+      setLanguageState(savedLanguage);
     }
   }, []);
 
-  const changeLanguage = (lang: string) => {
-    if (translations[lang]) {
-      setLanguage(lang);
-      setT(translations[lang]);
-      localStorage.setItem('language', lang);
-    }
+  const setLanguage = (lang: SupportedLocale) => {
+    setLanguageState(lang);
+    localStorage.setItem("language", lang);
   };
 
-  return (
-    <LanguageContext.Provider value={{ language, setLanguage: changeLanguage, t }}>
-      {children}
-    </LanguageContext.Provider>
+  const value = useMemo(
+    () => ({
+      language,
+      setLanguage,
+      t: translations[language],
+    }),
+    [language],
   );
+
+  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 };
 
 export const useLanguage = () => {
   const context = useContext(LanguageContext);
-  if (context === undefined) {
-    throw new Error('useLanguage must be used within a LanguageProvider');
+  if (!context) {
+    throw new Error("useLanguage must be used within a LanguageProvider");
   }
   return context;
 };

@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -8,31 +7,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Globe } from "lucide-react";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useLanguage, SupportedLocale } from "@/contexts/LanguageContext";
 
-type Language = {
-  code: string;
-  name: string;
-  flag: string;
-};
-
-const languages: Language[] = [
+const LANG_OPTIONS = [
+  { code: "ar", name: "العربية", flag: "🇸🇦" },
   { code: "en", name: "English", flag: "🇬🇧" },
-  { code: "it", name: "Italiano", flag: "🇮🇹" },
-];
+] as const;
 
 export default function LanguageSelector() {
   const { language, setLanguage } = useLanguage();
   const [mounted, setMounted] = useState(false);
 
-  // This effect is to ensure hydration doesn't cause issues
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  const handleLanguageChange = (value: string) => {
-    setLanguage(value);
-  };
 
   if (!mounted) {
     return null;
@@ -40,22 +28,19 @@ export default function LanguageSelector() {
 
   return (
     <div className="flex items-center">
-      <Select value={language} onValueChange={handleLanguageChange}>
-        <SelectTrigger 
-          className="w-[80px] h-10 border-none bg-transparent focus:ring-0" 
-          aria-label="Select Language"
-        >
-          <div className="flex items-center space-x-2">
+      <Select value={language} onValueChange={(value) => setLanguage(value as SupportedLocale)}>
+        <SelectTrigger className="w-[96px] h-10 border-none bg-transparent focus:ring-0" aria-label="Select language">
+          <div className="flex items-center gap-2">
             <Globe className="h-4 w-4" />
-            <SelectValue placeholder="Select language" />
+            <SelectValue placeholder="Language" />
           </div>
         </SelectTrigger>
         <SelectContent align="start" className="w-[160px]">
-          {languages.map((language) => (
-            <SelectItem key={language.code} value={language.code} className="cursor-pointer">
-              <div className="flex items-center space-x-2">
-                <span>{language.flag}</span>
-                <span>{language.name}</span>
+          {LANG_OPTIONS.map((option) => (
+            <SelectItem key={option.code} value={option.code} className="cursor-pointer">
+              <div className="flex items-center gap-2">
+                <span>{option.flag}</span>
+                <span>{option.name}</span>
               </div>
             </SelectItem>
           ))}

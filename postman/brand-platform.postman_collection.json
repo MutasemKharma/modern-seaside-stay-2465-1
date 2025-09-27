@@ -1,0 +1,63 @@
+{
+  "info": {
+    "name": "BRAND_NAME Platform",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Sample requests for the BRAND_NAME chalet platform API"
+  },
+  "item": [
+    {
+      "name": "List chalets",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/chalets",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "chalets"],
+          "query": [
+            { "key": "province", "value": "الرياض", "disabled": false }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Create booking",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"chaletId\": 1,\n  \"startDate\": \"2024-10-01\",\n  \"endDate\": \"2024-10-03\",\n  \"guests\": 6,\n  \"transportAddon\": \"bus-dammam\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/bookings",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "bookings"]
+        }
+      }
+    },
+    {
+      "name": "Support ticket",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"subject\": \"تعديل الحافلة\",\n  \"message\": \"ارغب في تعديل وقت الحافلة للساعة الخامسة\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/support/tickets",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "support", "tickets"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" }
+  ]
+}
